@@ -1,0 +1,170 @@
+--Go to Project folder from command prompt
+1. npm init -y
+-- open in vs code
+2. code .
+-- package.json file will be created and change
+3. "main": "app.js"
+4. Create app.js file by clicking add new file
+-- for building APIs install express
+5. npm install express (after this you can see node_modules folder added)
+6. Create express application
+const express = require("express");
+const app = express();
+
+app.get("/api",(req,res)=> {
+    res.json({
+        success : 1,
+        message : "This is working"
+    });
+});
+
+app.listen(3000,()=> {
+    console.log("Server Running");
+})
+
+-- Run this application by 
+7. node app.js 
+
+========================== Actual Project Starts
+-- Create a folder named in the root config and create a file named database.js
+-- Now create connection with mysql 
+8. npm install mysql
+-- write code in database.js
+9. const {createPool} = require("mysql");
+
+const pool = createPool({
+    port: 3306,
+    host: "localhost",
+    user: "root",
+    password: "utsav@mysql",
+    database: "test",
+    connectionLimit : 10
+});
+
+module.exports = pool;
+
+-- No if we want to hide these details like db name username and password
+10. npm install dotenv
+-- Create a file under node_modules with .env extension
+11. add require("dotenv").config(); in app.js
+-- define variables in .env file
+12. DB_PORT = 3306
+APP_PORT = 3000
+DB_HOST  = localhost
+DB_USER = root
+DB_PASS = utsav@mysql
+MYSQL_DB = test
+
+-- To use these variables first in app.js
+13. change app.listen(3000,() to app.listen(process.env.APP_PORT,()
+
+-- To stop server run again and again 
+14. npm install --save-dev nodemon
+-- then change in package.json to
+ "scripts": {
+    "start": "nodemon app.js"
+  },
+15. npm start
+-- To exclude env file from git add file in root as .gitignore
+.env
+node_modules
+
+-- Add folder api in the root and add another folder named users
+-- Add 3 files in it
+1. users.router.js
+2. users.controller.js
+3. users.service.js
+
+
+-- For salt and has password encrypt use 
+npm install bcrypt
+
+1. users.router.js
+ --- START -- 
+
+const { createuser } = require("./users.controller");
+const router = require("express").Router();
+
+router.post("/", createuser);
+
+module.exports = router;
+
+ --- END -- 
+2. users.controller.js
+ --- START---
+
+const { create } = require("./users.service");
+const { genSaltSync,hashSync } = require("bcrypt");
+
+module.exports = {
+    createuser : (req,res)=> {
+        const body = req.body;
+        const salt = genSaltSync(10);
+        body.password = hashSync(body.password, salt);
+        create(body, (err, results) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({
+                    success : 0,
+                    message : err.message
+                });
+            }
+            return res.status(200).json({
+                success : 1,
+                data : results
+            });
+        });
+    }
+}
+
+ -- END --
+
+3. users.service.js
+
+ --- START -- 
+
+const pool = require("../../config/database");
+
+module.exports = {
+    create: (data,callback) => {
+        pool.query(
+            `insert into auth_user(password,is_superuser,
+                username,first_name,last_name,email,is_staff,is_active) values
+                (?,?,?,?,?,?,?,?)`,
+                [
+                    data.password,
+                    data.is_superuser,
+                    data.username,
+                    data.first_name,
+                    data.last_name,
+                    data.email,
+                    data.is_staff,
+                    data.is_active
+                ],
+                (error, results, fields) => {
+                    if(error){
+                        return callback(error);
+                    }
+                    return callback(null,results)
+                }
+        );
+    }
+};
+
+ -- END --
+
+-- For Jsonwebtoken
+
+16. npm install jsonwebtoken
+-- Make login functionality working and create a jsonwebtoken
+
+-- Now create a middleware function to validate tokens
+-- create a folder at root named auth
+-- In this folder create a file named token_validate.js
+
+
+
+
+
+
+
